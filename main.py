@@ -1,4 +1,11 @@
 import tkinter as tk
+from ui.arayuz import BudgetTrackerApp
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = BudgetTrackerApp(root)
+    root.mainloop()
+    import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
 
@@ -331,3 +338,4 @@ class BudgetTrackerApp:
         # Rozetler
         rozet_metni = "\n".join([f"🏆 {r}" for r in veri["rozetler"]]) if veri["rozetler"] else "Henüz kazanılmış rozet yok."
         self.lbl_rozetler.config(text=rozet_metni)
+    
