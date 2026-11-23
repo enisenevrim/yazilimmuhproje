@@ -145,6 +145,58 @@ def kullanici_giris(
     return False, None, "Hatali e-posta veya sifre."
 
 
+def kullanici_cikis(kullanici: dict | None = None) -> tuple[bool, None, str]:
+    """Aktif kullanici oturumunu sonlandirir."""
+    return True, None, "Cikis yapildi."
+
+
+def kullanici_getir(
+    kullanici_id: int,
+    dosya_yolu: Path = VERI_DOSYASI,
+) -> dict | None:
+    """ID bilgisine gore kullanici kaydini dondurur."""
+    veri = verileri_yukle(dosya_yolu)
+    for kullanici in veri["kullanicilar"]:
+        if kullanici.get("id") == kullanici_id:
+            return kullanici
+    return None
+
+
+def kullanici_rozetlerini_getir(
+    kullanici_id: int,
+    dosya_yolu: Path = VERI_DOSYASI,
+) -> list[str]:
+    """Kullanicinin kazandigi rozetlerin listesini dondurur."""
+    kullanici = kullanici_getir(kullanici_id, dosya_yolu)
+    if not kullanici:
+        return []
+    rozetler = kullanici.get("rozetler", [])
+    return rozetler if isinstance(rozetler, list) else []
+
+
+def rozet_ekle(
+    kullanici_id: int,
+    rozet_adi: str,
+    dosya_yolu: Path = VERI_DOSYASI,
+) -> tuple[bool, list[str], str]:
+    """Kullaniciya daha once kazanmamissa yeni bir rozet ekler."""
+    rozet_temiz = (rozet_adi or "").strip()
+    if not rozet_temiz:
+        return False, [], "Rozet adi bos olamaz."
+
+    veri = verileri_yukle(dosya_yolu)
+    for kullanici in veri["kullanicilar"]:
+        if kullanici.get("id") == kullanici_id:
+            rozetler = kullanici.setdefault("rozetler", [])
+            if rozet_temiz not in rozetler:
+                rozetler.append(rozet_temiz)
+                verileri_kaydet(veri, dosya_yolu)
+                return True, rozetler, f"'{rozet_temiz}' rozeti kazanildi."
+            return False, rozetler, "Bu rozet zaten mevcut."
+
+    return False, [], "Kullanici bulunamadi."
+
+
 def _tarih_dogrula(tarih: str | None) -> tuple[bool, str, str]:
     """Tarihi YYYY-MM-DD biciminde dogrular; bos ise bugunun tarihini dondurur."""
     if tarih is None or str(tarih).strip() == "":
@@ -230,7 +282,9 @@ def islemleri_listele(
     if kategori and str(kategori).strip():
         kategori_temiz = str(kategori).strip().lower()
         kayitlar = [
-            i for i in kayitlar if str(i.get("kategori", "")).strip().lower() == kategori_temiz
+            i
+            for i in kayitlar
+            if str(i.get("kategori", "")).strip().lower() == kategori_temiz
         ]
 
     if ay and str(ay).strip():
@@ -316,6 +370,8 @@ def islem_sil(
 
     verileri_kaydet(veri, dosya_yolu)
     return True, "Islem silindi."
+
+
 def _ay_dogrula(ay: str | None) -> tuple[bool, str, str]:
     """Ayi YYYY-MM biciminde dogrular; bos ise icinde bulunulan ayi dondurur."""
     if ay is None or str(ay).strip() == "":
@@ -429,6 +485,15 @@ def hedef_olustur(
     verileri_kaydet(veri, dosya_yolu)
 
     return True, yeni_hedef, "Tasarruf hedefi olusturuldu."
+
+
+def hedefleri_listele(
+    kullanici_id: int,
+    dosya_yolu: Path = VERI_DOSYASI,
+) -> list[dict]:
+    """Kullanicinin tasarruf hedeflerini dondurur."""
+    veri = verileri_yukle(dosya_yolu)
+    return [h for h in veri["hedefler"] if h.get("kullanici_id") == kullanici_id]
 
 
 def hedefe_para_ayir(
